@@ -41,7 +41,13 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "expo-module-scripts": "^5.0.7"
+    "@types/react": "^18.2.0",
+    "expo": "*",
+    "expo-asset": "*",
+    "expo-modules-core": "*",
+    "expo-module-scripts": "^5.0.7",
+    "react": "*",
+    "react-native": "*"
   },
   "peerDependencies": {
     "expo": "*",

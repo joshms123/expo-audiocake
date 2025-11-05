@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd expo-audio
-          npm ci
+          npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Run TypeScript type validation
         run: |
@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd expo-audio
-          npm ci
+          npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -100,7 +100,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd expo-audio
-          npm ci
+          npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Build package
         run: |
