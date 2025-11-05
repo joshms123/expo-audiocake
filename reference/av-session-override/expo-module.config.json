@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["AVSessionOverrideModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.avsessionoverride.AVSessionOverrideModule"]
+  }
+}
