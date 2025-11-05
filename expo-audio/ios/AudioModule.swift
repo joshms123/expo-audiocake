@@ -13,6 +13,15 @@ public class AudioModule: Module {
   private var allowsRecording = false
   private var sessionOptions: AVAudioSession.CategoryOptions = []
 
+  // MARK: Advanced iOS Audio Session Configuration
+  private var desiredPolarPattern: String?
+  private var desiredPreferredInput: String?
+  private var desiredDataSourceName: String?
+  private var desiredInputOrientation: String?
+  private var desiredSampleRate: Double?
+  private var desiredIOBufferDuration: Double?
+  private var autoReapplyOnRouteChange: Bool = true
+
   public func definition() -> ModuleDefinition {
     Name("ExpoAudio")
 
@@ -55,6 +64,14 @@ public class AudioModule: Module {
       )
       #else
       promise.reject(Exception.init(name: "UnsupportedOperation", description: "Audio recording is not supported on this platform."))
+      #endif
+    }
+
+    Function("getAudioSessionState") { () -> [String: Any]? in
+      #if os(iOS)
+      return getAudioSessionState()
+      #else
+      return nil
       #endif
     }
 
@@ -343,6 +360,13 @@ public class AudioModule: Module {
       name: AVAudioSession.routeChangeNotification,
       object: session
     )
+
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleMediaServicesReset(_:)),
+      name: AVAudioSession.mediaServicesWereResetNotification,
+      object: session
+    )
   }
 
   @objc private func handleAudioSessionInterruption(_ notification: Notification) {
@@ -419,6 +443,20 @@ public class AudioModule: Module {
     default:
       break
     }
+
+    #if os(iOS)
+    if autoReapplyOnRouteChange {
+      _ = try? applyAdvancedSessionConfig()
+    }
+    #endif
+  }
+
+  @objc private func handleMediaServicesReset(_ notification: Notification) {
+    #if os(iOS)
+    if autoReapplyOnRouteChange {
+      _ = try? applyAdvancedSessionConfig()
+    }
+    #endif
   }
 
   private func resumeInterruptedPlayers() {
@@ -547,6 +585,20 @@ public class AudioModule: Module {
     } else {
       try session.setCategory(category, options: sessionOptions)
     }
+
+    #if os(iOS)
+    if let iosConfig = mode.ios {
+      self.desiredPolarPattern = iosConfig.polarPattern
+      self.desiredPreferredInput = iosConfig.preferredInput
+      self.desiredDataSourceName = iosConfig.dataSourceName
+      self.desiredInputOrientation = iosConfig.inputOrientation
+      self.desiredSampleRate = iosConfig.preferredSampleRate
+      self.desiredIOBufferDuration = iosConfig.ioBufferDuration
+      self.autoReapplyOnRouteChange = iosConfig.autoReapplyOnRouteChange ?? true
+
+      try applyAdvancedSessionConfig()
+    }
+    #endif
   }
 
   private func activateSession() throws {
@@ -589,4 +641,107 @@ public class AudioModule: Module {
     }
     #endif
   }
+
+  // MARK: - Advanced iOS Audio Session Configuration
+
+  #if os(iOS)
+  private func getAudioSessionState() -> [String: Any] {
+    let session = AVAudioSession.sharedInstance()
+    return [
+      "category": session.category.rawValue,
+      "mode": session.mode.rawValue,
+      "sampleRate": session.sampleRate,
+      "ioBufferDuration": session.ioBufferDuration,
+      "outputRoute": session.currentRoute.outputs.first?.portType.rawValue ?? "unknown"
+    ]
+  }
+
+  private func applyAdvancedSessionConfig() throws {
+    let session = AVAudioSession.sharedInstance()
+
+    if let sampleRate = desiredSampleRate {
+      try session.setPreferredSampleRate(sampleRate)
+    }
+
+    if let ioBufferDuration = desiredIOBufferDuration {
+      try session.setPreferredIOBufferDuration(ioBufferDuration)
+    }
+
+    if let preferredInputType = desiredPreferredInput {
+      try configurePreferredInput(session: session, inputType: preferredInputType)
+    }
+
+    if let dataSourceName = desiredDataSourceName, let polarPattern = desiredPolarPattern {
+      try configureStereoDataSource(session: session, dataSourceName: dataSourceName, polarPattern: polarPattern)
+    }
+
+    if let inputOrientation = desiredInputOrientation {
+      let orientation = try mapOrientation(inputOrientation)
+      try session.setPreferredInputOrientation(orientation)
+    }
+  }
+
+  private func configurePreferredInput(session: AVAudioSession, inputType: String) throws {
+    guard inputType.lowercased() == "builtinmic" else {
+      throw AudioException("Only 'builtInMic' is supported for preferredInput")
+    }
+
+    guard let availableInputs = session.availableInputs,
+          let builtInMicInput = availableInputs.first(where: { $0.portType == .builtInMic }) else {
+      throw AudioException("The device must have a built-in microphone")
+    }
+
+    try session.setPreferredInput(builtInMicInput)
+  }
+
+  private func configureStereoDataSource(session: AVAudioSession, dataSourceName: String, polarPattern: String) throws {
+    let mappedPolarPattern = try mapPolarPattern(polarPattern)
+
+    guard let preferredInput = session.preferredInput,
+          let dataSources = preferredInput.dataSources,
+          let dataSource = dataSources.first(where: { $0.dataSourceName.lowercased() == dataSourceName.lowercased() }),
+          let supportedPolarPatterns = dataSource.supportedPolarPatterns else {
+      throw AudioException("Could not find data source '\(dataSourceName)' or it has no supported polar patterns")
+    }
+
+    guard supportedPolarPatterns.contains(mappedPolarPattern) else {
+      throw AudioException("The selected data source does not support '\(polarPattern)' polar pattern")
+    }
+
+    try dataSource.setPreferredPolarPattern(mappedPolarPattern)
+    try preferredInput.setPreferredDataSource(dataSource)
+  }
+
+  private func mapPolarPattern(_ pattern: String) throws -> AVAudioSession.PolarPattern {
+    switch pattern.lowercased() {
+    case "stereo":
+      return .stereo
+    case "cardioid":
+      return .cardioid
+    case "omnidirectional":
+      return .omnidirectional
+    case "subcardioid":
+      return .subcardioid
+    default:
+      throw AudioException("Unknown polar pattern: \(pattern)")
+    }
+  }
+
+  private func mapOrientation(_ orientation: String) throws -> AVAudioSession.StereoOrientation {
+    switch orientation.lowercased() {
+    case "portrait":
+      return .portrait
+    case "portraitupsidedown":
+      return .portraitUpsideDown
+    case "landscapeleft":
+      return .landscapeLeft
+    case "landscaperight":
+      return .landscapeRight
+    case "none":
+      return .none
+    default:
+      throw AudioException("Unknown input orientation: \(orientation)")
+    }
+  }
+  #endif
 }

@@ -5,6 +5,17 @@ struct AudioMode: Record {
   @Field var interruptionMode: InterruptionMode = .mixWithOthers
   @Field var allowsRecording: Bool = false
   @Field var shouldPlayInBackground: Bool = false
+  @Field var ios: AudioModeIOSConfig?
+}
+
+struct AudioModeIOSConfig: Record {
+  @Field var polarPattern: String?
+  @Field var preferredInput: String?
+  @Field var dataSourceName: String?
+  @Field var inputOrientation: String?
+  @Field var preferredSampleRate: Double?
+  @Field var ioBufferDuration: Double?
+  @Field var autoReapplyOnRouteChange: Bool?
 }
 
 enum InterruptionMode: String, Enumerable {
