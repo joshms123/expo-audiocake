@@ -1,8 +1,8 @@
 {
-  "name": "expo-audio",
-  "title": "Expo Audio",
-  "version": "1.0.12",
-  "description": "A cross-platform audio library for React Native and Expo apps.",
+  "name": "@joshms123/expo-audiocake",
+  "title": "Expo Audiocake",
+  "version": "1.0.0",
+  "description": "Expo Audio fork with advanced iOS AVAudioSession control for stereo recording with polar patterns, input orientation, and auto-reapply on route changes.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "sideEffects": false,
@@ -15,21 +15,29 @@
     "prepublishOnly": "expo-module prepublishOnly",
     "expo-module": "expo-module"
   },
-  "homepage": "https://docs.expo.dev/versions/latest/sdk/audio/",
+  "homepage": "https://github.com/joshms123/expo-audiocake#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/expo/expo.git",
-    "directory": "packages/expo-audio"
+    "url": "https://github.com/joshms123/expo-audiocake.git",
+    "directory": "expo-audio"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "keywords": [
     "react-native",
     "expo",
     "expo-audio",
+    "expo-audiocake",
     "audio",
     "ios",
-    "android"
+    "android",
+    "stereo",
+    "recording",
+    "polar-pattern",
+    "avaudiosession"
   ],
-  "author": "650 Industries, Inc.",
+  "author": "joshms123",
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {

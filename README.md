@@ -2,6 +2,24 @@
 
 > A fork of expo-audio with advanced iOS AVAudioSession control, including stereo recording with polar patterns, input orientation, and auto-reapply on route changes.
 
+[![CI](https://github.com/joshms123/expo-audiocake/actions/workflows/ci.yml/badge.svg)](https://github.com/joshms123/expo-audiocake/actions/workflows/ci.yml)
+[![npm package](https://img.shields.io/badge/npm-@joshms123%2Fexpo--audiocake-blue)](https://github.com/joshms123/expo-audiocake/packages)
+
+## 🚀 Quick Start
+
+```bash
+# Install directly from GitHub (no authentication needed)
+npm install joshms123/expo-audiocake#main
+
+# Or install from GitHub Packages (requires authentication)
+npm install @joshms123/expo-audiocake
+
+# Prebuild for iOS
+npx expo prebuild --platform ios --clean
+```
+
+📦 **See [INSTALLATION.md](INSTALLATION.md) for detailed installation options and troubleshooting.**
+
 ## Why This Exists
 
 The official `expo-audio` package provides basic audio recording and playback, but lacks fine-grained control over iOS's AVAudioSession. This limits applications that need:
