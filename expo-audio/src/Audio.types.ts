@@ -521,6 +521,47 @@ export type AudioModeIOSConfig = {
    * @default true
    */
   autoReapplyOnRouteChange?: boolean;
+
+  /**
+   * Audio session mode - controls audio routing and processing behavior.
+   *
+   * - 'default': Standard audio processing
+   * - 'voiceChat': Optimized for voice, routes to speaker by default
+   * - 'videoRecording': Optimized for video recording with audio
+   * - 'measurement': Minimal processing for accurate audio measurement
+   * - 'moviePlayback': Optimized for movie/video playback
+   * - 'spokenAudio': Optimized for spoken content (podcasts, audiobooks)
+   * - 'gameChat': Optimized for game voice chat
+   *
+   * @default 'default'
+   * @platform ios
+   */
+  mode?: 'default' | 'voiceChat' | 'videoRecording' | 'measurement' | 'moviePlayback' | 'spokenAudio' | 'gameChat';
+
+  /**
+   * Force audio to route through speaker instead of earpiece.
+   * Only applies when allowsRecording is true (playAndRecord category).
+   *
+   * When true, audio will play through:
+   * - Speaker (when no accessories connected)
+   * - Headphones (when plugged in)
+   * - Bluetooth speaker/headphones (when connected)
+   *
+   * When false, audio routes to earpiece by default (phone call style).
+   *
+   * @default false
+   * @platform ios
+   */
+  defaultToSpeaker?: boolean;
+
+  /**
+   * Allow audio to route to Bluetooth A2DP devices (high-quality stereo).
+   * Useful for stereo recording or high-quality playback over Bluetooth.
+   *
+   * @default false
+   * @platform ios
+   */
+  allowBluetoothA2DP?: boolean;
 };
 
 export type AudioMode = {

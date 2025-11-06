@@ -56,6 +56,7 @@ class AudioModule : Module() {
   private var shouldRouteThroughEarpiece = false
   private var focusAcquired = false
   private var interruptionMode: InterruptionMode? = null
+  private var isRecordingMode = false
 
   private var audioFocusRequest: AudioFocusRequest? = null
   private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
@@ -120,17 +121,31 @@ class AudioModule : Module() {
     }
 
     val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      val requestType = interruptionMode?.let {
-        if (it == InterruptionMode.DO_NOT_MIX) {
-          AudioManager.AUDIOFOCUS_GAIN
-        } else {
-          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
-        }
-      } ?: AudioManager.AUDIOFOCUS_GAIN
+      // Use exclusive focus for recording to prevent interruptions and screen sleep
+      val requestType = when {
+        isRecordingMode -> AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+        interruptionMode == InterruptionMode.DO_NOT_MIX -> AudioManager.AUDIOFOCUS_GAIN
+        else -> AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+      }
+      
+      // Use voice communication attributes for recording
+      val contentType = if (isRecordingMode) {
+        AudioAttributes.CONTENT_TYPE_SPEECH
+      } else {
+        AudioAttributes.CONTENT_TYPE_MUSIC
+      }
+      
+      val usage = if (isRecordingMode) {
+        AudioAttributes.USAGE_VOICE_COMMUNICATION
+      } else {
+        AudioAttributes.USAGE_MEDIA
+      }
+      
       audioFocusRequest = AudioFocusRequest.Builder(requestType).run {
         setAudioAttributes(
           AudioAttributes.Builder()
-            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .setContentType(contentType)
+            .setUsage(usage)
             .build()
         )
         setAcceptsDelayedFocusGain(true)
@@ -178,7 +193,15 @@ class AudioModule : Module() {
     AsyncFunction("setAudioModeAsync") { mode: AudioMode ->
       staysActiveInBackground = mode.shouldPlayInBackground
       interruptionMode = mode.interruptionMode
+      isRecordingMode = mode.allowsRecording
       updatePlaySoundThroughEarpiece(mode.shouldRouteThroughEarpiece ?: false)
+      
+      // Configure audio manager mode for recording
+      if (isRecordingMode) {
+        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+      } else {
+        audioManager.mode = AudioManager.MODE_NORMAL
+      }
     }
 
     AsyncFunction("setIsAudioActiveAsync") { enabled: Boolean ->

@@ -21,6 +21,9 @@ public class AudioModule: Module {
   private var desiredSampleRate: Double?
   private var desiredIOBufferDuration: Double?
   private var autoReapplyOnRouteChange: Bool = true
+  private var desiredMode: AVAudioSession.Mode = .default
+  private var desiredDefaultToSpeaker: Bool = false
+  private var desiredAllowBluetoothA2DP: Bool = false
 
   public func definition() -> ModuleDefinition {
     Name("ExpoAudio")
@@ -569,6 +572,16 @@ public class AudioModule: Module {
 
 #if !os(tvOS)
       if category == .playAndRecord {
+        // Apply defaultToSpeaker preference
+        if desiredDefaultToSpeaker {
+          categoryOptions.insert(.defaultToSpeaker)
+        }
+        
+        // Apply A2DP preference for high-quality Bluetooth stereo
+        if desiredAllowBluetoothA2DP {
+          categoryOptions.insert(.allowBluetoothA2DP)
+        }
+        
 #if compiler(>=6.2) // Xcode 26
         categoryOptions.insert(.allowBluetoothHFP)
 #else
@@ -581,9 +594,9 @@ public class AudioModule: Module {
     }
 
     if sessionOptions.isEmpty {
-      try session.setCategory(category, mode: .default)
+      try session.setCategory(category, mode: desiredMode)
     } else {
-      try session.setCategory(category, options: sessionOptions)
+      try session.setCategory(category, mode: desiredMode, options: sessionOptions)
     }
 
     #if os(iOS)
@@ -595,6 +608,15 @@ public class AudioModule: Module {
       self.desiredSampleRate = iosConfig.preferredSampleRate
       self.desiredIOBufferDuration = iosConfig.ioBufferDuration
       self.autoReapplyOnRouteChange = iosConfig.autoReapplyOnRouteChange ?? true
+      
+      // Store mode and routing preferences
+      self.desiredDefaultToSpeaker = iosConfig.defaultToSpeaker ?? false
+      self.desiredAllowBluetoothA2DP = iosConfig.allowBluetoothA2DP ?? false
+      if let modeStr = iosConfig.mode {
+        self.desiredMode = try mapMode(modeStr)
+      } else {
+        self.desiredMode = .default
+      }
 
       try applyAdvancedSessionConfig()
     }
@@ -744,4 +766,25 @@ public class AudioModule: Module {
     }
   }
   #endif
+
+  private func mapMode(_ modeStr: String) throws -> AVAudioSession.Mode {
+    switch modeStr.lowercased() {
+    case "default":
+      return .default
+    case "voicechat", "voice-chat":
+      return .voiceChat
+    case "videorecording", "video-recording":
+      return .videoRecording
+    case "measurement":
+      return .measurement
+    case "movieplayback", "movie-playback":
+      return .moviePlayback
+    case "spokenaudio", "spoken-audio":
+      return .spokenAudio
+    case "gamechat", "game-chat":
+      return .gameChat
+    default:
+      throw AudioException("Unknown AVAudioSession mode: \(modeStr)")
+    }
+  }
 }
