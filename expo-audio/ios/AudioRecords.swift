@@ -9,6 +9,9 @@ struct AudioMode: Record {
 }
 
 struct AudioModeIOSConfig: Record {
+  @Field var mode: String?
+  @Field var defaultToSpeaker: Bool?
+  @Field var allowBluetoothA2DP: Bool?
   @Field var polarPattern: String?
   @Field var preferredInput: String?
   @Field var dataSourceName: String?
