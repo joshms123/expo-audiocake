@@ -536,6 +536,17 @@ public class AudioModule: Module {
     self.allowsRecording = mode.allowsRecording
 
     #if os(iOS)
+    // Parse iOS configuration BEFORE using it to build category options
+    if let iosConfig = mode.ios {
+      self.desiredDefaultToSpeaker = iosConfig.defaultToSpeaker ?? false
+      self.desiredAllowBluetoothA2DP = iosConfig.allowBluetoothA2DP ?? false
+      if let modeStr = iosConfig.mode {
+        self.desiredMode = try mapMode(modeStr)
+      } else {
+        self.desiredMode = .default
+      }
+    }
+    
     if !mode.allowsRecording {
       registry.allRecorders.values.forEach { recorder in
         if recorder.isRecording {
@@ -601,6 +612,7 @@ public class AudioModule: Module {
 
     #if os(iOS)
     if let iosConfig = mode.ios {
+      // Store advanced iOS configuration (mode and routing preferences already set earlier)
       self.desiredPolarPattern = iosConfig.polarPattern
       self.desiredPreferredInput = iosConfig.preferredInput
       self.desiredDataSourceName = iosConfig.dataSourceName
@@ -608,15 +620,6 @@ public class AudioModule: Module {
       self.desiredSampleRate = iosConfig.preferredSampleRate
       self.desiredIOBufferDuration = iosConfig.ioBufferDuration
       self.autoReapplyOnRouteChange = iosConfig.autoReapplyOnRouteChange ?? true
-      
-      // Store mode and routing preferences
-      self.desiredDefaultToSpeaker = iosConfig.defaultToSpeaker ?? false
-      self.desiredAllowBluetoothA2DP = iosConfig.allowBluetoothA2DP ?? false
-      if let modeStr = iosConfig.mode {
-        self.desiredMode = try mapMode(modeStr)
-      } else {
-        self.desiredMode = .default
-      }
 
       try applyAdvancedSessionConfig()
     }
