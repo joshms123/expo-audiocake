@@ -199,6 +199,11 @@ class AudioModule : Module() {
       // Configure audio manager mode for recording
       if (isRecordingMode) {
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+        // Ensure speakerphone is off to allow proper headphone routing
+        // Only force speaker ON if explicitly requested via shouldRouteThroughEarpiece
+        if (mode.shouldRouteThroughEarpiece != true) {
+          audioManager.isSpeakerphoneOn = false
+        }
       } else {
         audioManager.mode = AudioManager.MODE_NORMAL
       }
