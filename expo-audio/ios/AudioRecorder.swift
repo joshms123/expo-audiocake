@@ -94,7 +94,7 @@ class AudioRecorder: SharedRef<AVAudioRecorder>, RecordingResultHandler {
     
     // Only reconfigure session if it's not already in a compatible state
     // This preserves any custom configuration set via setAudioModeAsync
-    let needsSessionConfig = session.category != .playAndRecord || !session.isActive
+    let needsSessionConfig = session.category != .playAndRecord
     
     if needsSessionConfig {
       do {
@@ -105,7 +105,14 @@ class AudioRecorder: SharedRef<AVAudioRecorder>, RecordingResultHandler {
         throw AudioRecordingException("Failed to configure audio session: \(error.localizedDescription)")
       }
     } else {
-      print("AudioRecorder: Session already configured for recording, skipping reconfiguration")
+      // Session is already .playAndRecord - just ensure it's active
+      do {
+        try session.setActive(true)
+        print("AudioRecorder: Session already configured for recording, just ensuring active")
+      } catch {
+        currentState = .error
+        throw AudioRecordingException("Failed to activate audio session: \(error.localizedDescription)")
+      }
     }
 
     if let options {
