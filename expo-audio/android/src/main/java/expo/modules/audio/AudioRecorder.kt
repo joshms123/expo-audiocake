@@ -68,6 +68,37 @@ class AudioRecorder(
     }
   }
 
+  fun forceResetSession() {
+    // On Android, force reset AudioManager to clear any lingering state from other audio systems (e.g., LiveKit)
+    try {
+      val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+      audioManager?.let { manager ->
+        // Reset audio mode to normal (exits communication/call modes)
+        manager.mode = AudioManager.MODE_NORMAL
+        
+        // Abandon audio focus if held by any component
+        @Suppress("DEPRECATION")
+        manager.abandonAudioFocus(null)
+        
+        // Stop Bluetooth SCO if active (used by VoIP apps)
+        if (manager.isBluetoothScoOn) {
+          manager.stopBluetoothSco()
+          manager.isBluetoothScoOn = false
+        }
+        
+        // Clear communication device on Android S+ (used by LiveKit and other VoIP)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+          manager.clearCommunicationDevice()
+        }
+        
+        android.util.Log.d("AudioRecorder", "Force reset audio session successful")
+      } ?: throw AudioRecorderException("AudioManager not available")
+    } catch (e: Exception) {
+      android.util.Log.w("AudioRecorder", "Force reset audio session failed: ${e.message}")
+      throw AudioRecorderException("Failed to reset audio session: ${e.message}")
+    }
+  }
+
   fun prepareRecording(options: RecordingOptions?) {
     if (recorder != null || isPrepared || isRecording || isPaused) {
       throw AudioRecorderAlreadyPreparedException()

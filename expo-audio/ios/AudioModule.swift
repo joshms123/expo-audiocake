@@ -284,6 +284,10 @@ public class AudioModule: Module {
         try recorder.prepare(options: options, sessionOptions: sessionOptions)
       }
 
+      AsyncFunction("forceResetSession") { (recorder: AudioRecorder) in
+        try recorder.forceResetSession()
+      }
+
       Function("record") { (recorder: AudioRecorder, options: RecordOptions?) in
         try checkPermissions()
 

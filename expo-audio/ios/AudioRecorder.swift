@@ -65,18 +65,47 @@ class AudioRecorder: SharedRef<AVAudioRecorder>, RecordingResultHandler {
     }
   }
 
+  func forceResetSession() throws {
+    let session = AVAudioSession.sharedInstance()
+    do {
+      // Deactivate completely to clear any lingering state from other audio systems (e.g., LiveKit)
+      try session.setActive(false, options: .notifyOthersOnDeactivation)
+      
+      // Small delay to ensure iOS processes the deactivation
+      Thread.sleep(forTimeInterval: 0.1)
+      
+      // Reactivate with recording-ready defaults
+      try session.setCategory(.playAndRecord, mode: .default)
+      try session.setActive(true)
+      
+      print("AudioRecorder: Force reset audio session successful")
+    } catch {
+      print("AudioRecorder: Force reset audio session failed - \(error.localizedDescription)")
+      throw AudioRecordingException("Failed to reset audio session: \(error.localizedDescription)")
+    }
+  }
+
   func prepare(options: RecordingOptions?, sessionOptions: AVAudioSession.CategoryOptions = []) throws {
     if currentState == .recording {
       ref.stop()
     }
     resetDurationTracking()
     let session = AVAudioSession.sharedInstance()
-    do {
-      try session.setCategory(.playAndRecord, mode: .default, options: sessionOptions)
-      try session.setActive(true)
-    } catch {
-      currentState = .error
-      throw AudioRecordingException("Failed to configure audio session: \(error.localizedDescription)")
+    
+    // Only reconfigure session if it's not already in a compatible state
+    // This preserves any custom configuration set via setAudioModeAsync
+    let needsSessionConfig = session.category != .playAndRecord || !session.isActive
+    
+    if needsSessionConfig {
+      do {
+        try session.setCategory(.playAndRecord, mode: .default, options: sessionOptions)
+        try session.setActive(true)
+      } catch {
+        currentState = .error
+        throw AudioRecordingException("Failed to configure audio session: \(error.localizedDescription)")
+      }
+    } else {
+      print("AudioRecorder: Session already configured for recording, skipping reconfiguration")
     }
 
     if let options {

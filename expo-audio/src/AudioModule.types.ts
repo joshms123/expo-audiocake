@@ -351,6 +351,27 @@ export declare class AudioRecorder extends SharedObject<RecordingEvents> {
   prepareToRecordAsync(options?: Partial<RecordingOptions>): Promise<void>;
 
   /**
+   * Forces a complete reset of the audio session to clear any lingering state from other audio systems.
+   * 
+   * On iOS: Deactivates and reactivates the AVAudioSession to clear any VoIP or other app configurations.
+   * On Android: Resets AudioManager mode to NORMAL and clears communication devices/audio focus.
+   * 
+   * This is useful when other audio systems (like LiveKit, Agora, etc.) may have left the audio session
+   * in an incompatible state. Call this before recording if you suspect audio session conflicts.
+   * 
+   * @return A `Promise` that is resolved if successful or rejected if the reset fails.
+   * 
+   * @example
+   * ```tsx
+   * // Clear any lingering audio session state before recording
+   * await recorder.forceResetSession();
+   * await recorder.prepareToRecordAsync();
+   * recorder.record();
+   * ```
+   */
+  forceResetSession(): Promise<void>;
+
+  /**
    * Stops the recording once the specified time has elapsed.
    * @param seconds The time in seconds to stop recording at.
    * @deprecated Use `record({ forDuration: seconds })` instead.

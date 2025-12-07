@@ -514,6 +514,10 @@ class AudioModule : Module() {
         recorder.prepareRecording(options)
       }
 
+      AsyncFunction("forceResetSession") { recorder: AudioRecorder ->
+        recorder.forceResetSession()
+      }
+
       Function("record") { recorder: AudioRecorder, options: RecordOptions? ->
         checkRecordingPermission()
         if (recorder.isPrepared) {
