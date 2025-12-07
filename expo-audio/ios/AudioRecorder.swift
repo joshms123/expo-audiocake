@@ -71,8 +71,8 @@ class AudioRecorder: SharedRef<AVAudioRecorder>, RecordingResultHandler {
       // Deactivate completely to clear any lingering state from other audio systems (e.g., LiveKit)
       try session.setActive(false, options: .notifyOthersOnDeactivation)
       
-      // Small delay to ensure iOS processes the deactivation
-      Thread.sleep(forTimeInterval: 0.1)
+      // Small delay to ensure iOS processes the deactivation (100ms = 100000 microseconds)
+      usleep(100000)
       
       // Reactivate with recording-ready defaults
       try session.setCategory(.playAndRecord, mode: .default)

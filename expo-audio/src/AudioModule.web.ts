@@ -389,6 +389,12 @@ export class AudioRecorderWeb
     });
   }
 
+  async forceResetSession(): Promise<void> {
+    // Web doesn't have the same audio session management issues as native platforms
+    // This is a no-op for compatibility
+    return Promise.resolve();
+  }
+
   async prepareToRecordAsync(): Promise<void> {
     return this.setup();
   }
