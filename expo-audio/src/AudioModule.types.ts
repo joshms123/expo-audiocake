@@ -3,10 +3,15 @@ import { NativeModule, PermissionResponse, SharedObject } from 'expo-modules-cor
 import {
   AudioMetadata,
   AudioMode,
+  AudioPlaylistLoopMode,
+  AudioPlaylistOptions,
+  AudioPlaylistStatus,
   AudioSessionState,
   AudioSource,
+  AudioSourceInfo,
   AudioStatus,
   PitchCorrectionQuality,
+  PreloadOptions,
   RecorderState,
   RecordingInput,
   RecordingOptions,
@@ -25,16 +30,46 @@ export declare class NativeAudioModule extends NativeModule {
   getRecordingPermissionsAsync(): Promise<PermissionResponse>;
 
   /**
+   * Requests permission to post notifications (Android only, required for background recording).
+   * @platform android
+   */
+  requestNotificationPermissionsAsync(): Promise<PermissionResponse>;
+
+  /**
    * Get current audio session state (iOS only).
    * Returns null on Android/Web.
-   * 
+   *
    * @platform ios
    * @returns Current audio session state or null if not available
    */
   getAudioSessionState(): AudioSessionState | null;
 
+  /**
+   * Pre-buffers an audio source for near-instant playback.
+   * @param source The audio source to preload.
+   * @param options Optional preload configuration.
+   */
+  preload(source: AudioSource, options?: PreloadOptions): Promise<AudioSourceInfo>;
+
+  /**
+   * Releases a previously preloaded audio source from the cache.
+   * @param source The audio source to release.
+   */
+  clearPreloadedSource(source: AudioSource): Promise<void>;
+
+  /**
+   * Releases all preloaded audio sources from the cache.
+   */
+  clearAllPreloadedSources(): Promise<void>;
+
+  /**
+   * Returns the URIs of all currently preloaded audio sources.
+   */
+  getPreloadedSources(): string[];
+
   readonly AudioPlayer: typeof AudioPlayer;
   readonly AudioRecorder: typeof AudioRecorder;
+  readonly AudioPlaylist: typeof AudioPlaylist;
 }
 
 export declare class AudioPlayer extends SharedObject<AudioEvents> {
@@ -42,12 +77,17 @@ export declare class AudioPlayer extends SharedObject<AudioEvents> {
    * Initializes a new audio player instance with the given source.
    * @hidden
    */
-  constructor(source: AudioSource, updateInterval: number, keepAudioSessionActive: boolean);
+  constructor(
+    source: AudioSource,
+    updateInterval: number,
+    keepAudioSessionActive: boolean,
+    preferredForwardBufferDuration?: number
+  );
 
   /**
    * Unique identifier for the player object.
    */
-  id: number;
+  id: string;
 
   /**
    * Boolean value indicating whether the player is currently playing.
@@ -281,7 +321,7 @@ export declare class AudioRecorder extends SharedObject<RecordingEvents> {
   /**
    * Unique identifier for the recorder object.
    */
-  id: number;
+  id: string;
 
   /**
    * The current length of the recording, in seconds.
@@ -389,3 +429,101 @@ export type RecordingEvents = {
   /** Fired when the recorder's status changes (start/stop/pause/error, and so on). */
   recordingStatusUpdate: (status: RecordingStatus) => void;
 };
+
+/**
+ * Event types that an `AudioPlaylist` can emit.
+ */
+export type AudioPlaylistEvents = {
+  /** Fired when the playlist's playback status changes. */
+  playlistStatusUpdate(status: AudioPlaylistStatus): void;
+  /** Fired when the current track changes in the playlist. */
+  trackChanged(index: number): void;
+};
+
+/**
+ * A queue-based audio player that manages an ordered list of audio sources.
+ *
+ * Supports loop modes, track navigation, and queue management.
+ * Use `useAudioPlaylist()` or `createAudioPlaylist()` to create instances.
+ */
+export declare class AudioPlaylist extends SharedObject<AudioPlaylistEvents> {
+  /**
+   * Initializes a new audio playlist with the given options.
+   * @hidden
+   */
+  constructor(options: AudioPlaylistOptions);
+
+  /**
+   * Unique identifier for the playlist object.
+   */
+  id: string;
+
+  /**
+   * Whether the playlist is currently playing.
+   */
+  playing: boolean;
+
+  /**
+   * Current loop mode for the playlist.
+   */
+  loop: AudioPlaylistLoopMode;
+
+  /**
+   * Index of the currently active track.
+   */
+  currentIndex: number;
+
+  /**
+   * The list of audio sources in the playlist.
+   */
+  sources: AudioSource[];
+
+  /**
+   * The current playback status of the playlist.
+   * @hidden
+   */
+  currentStatus: AudioPlaylistStatus;
+
+  /** Start playback of the current track. */
+  play(): void;
+
+  /** Pause playback. */
+  pause(): void;
+
+  /** Skip to the next track. */
+  next(): void;
+
+  /** Go back to the previous track. */
+  previous(): void;
+
+  /**
+   * Jump to the track at the specified index.
+   * @param index Zero-based index of the track to play.
+   */
+  skipTo(index: number): void;
+
+  /**
+   * Add a track to the end of the playlist, or insert it at `index`.
+   * @param source The audio source to add.
+   * @param index Optional zero-based insertion index.
+   */
+  addTrack(source: AudioSource, index?: number): void;
+
+  /**
+   * Remove the track at `index` from the playlist.
+   * @param index Zero-based index of the track to remove.
+   */
+  removeTrack(index: number): void;
+
+  /** Remove all tracks from the playlist. */
+  clearQueue(): void;
+
+  /**
+   * Change the loop mode.
+   * @param mode The new loop mode.
+   */
+  setLoop(mode: AudioPlaylistLoopMode): void;
+
+  /** Release this playlist and free associated resources. */
+  remove(): void;
+}

@@ -4,9 +4,13 @@ import { useEffect, useState, useMemo } from 'react';
 
 import {
   AudioMode,
+  AudioPlaylistOptions,
+  AudioPlaylistStatus,
   AudioPlayerOptions,
   AudioSource,
+  AudioSourceInfo,
   AudioStatus,
+  PreloadOptions,
   RecorderState,
   RecordingOptions,
   RecordingStatus,
@@ -14,9 +18,10 @@ import {
 import {
   AUDIO_SAMPLE_UPDATE,
   PLAYBACK_STATUS_UPDATE,
+  PLAYLIST_STATUS_UPDATE,
   RECORDING_STATUS_UPDATE,
 } from './AudioEventKeys';
-import { AudioPlayer, AudioRecorder, AudioSample } from './AudioModule.types';
+import { AudioPlaylist, AudioPlayer, AudioRecorder, AudioSample } from './AudioModule.types';
 import * as AudioModule from './AudioModule.web';
 import { createRecordingOptions } from './utils/options';
 import { resolveSource, resolveSourceWithDownload } from './utils/resolveSource';
@@ -227,6 +232,70 @@ export async function requestRecordingPermissionsAsync(): Promise<PermissionResp
 
 export async function getRecordingPermissionsAsync(): Promise<PermissionResponse> {
   return await AudioModule.getRecordingPermissionsAsync();
+}
+
+/**
+ * Notification permissions are not required on web — always returns granted.
+ * @platform web
+ */
+export async function requestNotificationPermissionsAsync(): Promise<PermissionResponse> {
+  return {
+    status: 'granted' as any,
+    expires: 'never',
+    canAskAgain: true,
+    granted: true,
+  };
+}
+
+/**
+ * Audio playlists are not yet fully implemented on web (Phase 4).
+ * This hook returns a placeholder; playlist playback will be added in a future phase.
+ * @platform web
+ */
+export function useAudioPlaylist(_options: AudioPlaylistOptions): AudioPlaylist {
+  throw new Error('AudioPlaylist is not yet supported on web. Coming in Phase 4.');
+}
+
+/**
+ * @platform web
+ */
+export function useAudioPlaylistStatus(_playlist: AudioPlaylist): AudioPlaylistStatus {
+  throw new Error('AudioPlaylist is not yet supported on web. Coming in Phase 4.');
+}
+
+/**
+ * @platform web
+ */
+export function createAudioPlaylist(_options: AudioPlaylistOptions): AudioPlaylist {
+  throw new Error('AudioPlaylist is not yet supported on web. Coming in Phase 4.');
+}
+
+/**
+ * Preloading is not yet implemented on web (Phase 4).
+ * @platform web
+ */
+export async function preload(
+  _source: AudioSource,
+  _options?: PreloadOptions
+): Promise<AudioSourceInfo> {
+  return {};
+}
+
+/**
+ * @platform web
+ */
+export async function clearPreloadedSource(_source: AudioSource): Promise<void> {}
+
+/**
+ * @platform web
+ */
+export async function clearAllPreloadedSources(): Promise<void> {}
+
+/**
+ * @platform web
+ */
+export function getPreloadedSources(): string[] {
+  return [];
 }
 
 export { AudioModule };

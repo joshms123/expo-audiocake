@@ -36,7 +36,7 @@ function getAssetFromSource(source?: AudioSource | string | number | Asset | nul
 
 function createSourceFromAsset(
   asset: Asset,
-  extras: { assetId?: number; headers?: Record<string, string> } = {}
+  extras: { assetId?: number; headers?: Record<string, string>; name?: string } = {}
 ): AudioSourceObject {
   const uri = asset.localUri ?? asset.uri;
   const result: AudioSourceObject = { uri };
@@ -46,6 +46,11 @@ function createSourceFromAsset(
   }
   if (extras.headers) {
     result.headers = extras.headers;
+  }
+  // Carry the asset name for display purposes (e.g. lock screen, playlist UI)
+  const name = extras.name ?? asset.name;
+  if (name) {
+    result.name = name;
   }
 
   return result;
@@ -85,6 +90,16 @@ export function resolveSource(source?: AudioSource | string | number | null): Au
 }
 
 /**
+ * Resolves an array of audio sources to their normalized form.
+ * Convenience wrapper around `resolveSource` for playlist use cases.
+ */
+export function resolveSources(
+  sources: (AudioSource | string | number | null)[]
+): (AudioSource | null)[] {
+  return sources.map(resolveSource);
+}
+
+/**
  * Resolves and optionally downloads an audio source before loading.
  * Similar to expo-av's getNativeSourceAndFullInitialStatusForLoadAsync but simplified for expo-audio.
  */
@@ -110,17 +125,13 @@ export async function resolveSourceWithDownload(
       }
 
       // FYI: downloadAsync is a no-op on web and immediately returns a promise that resolves to the original url
-      // TODO(@hirbod): evaluate if we should implement downloadAsync for web instead
       await assetToDownload.downloadAsync();
 
       // Use the local URI if available after download
       if (assetToDownload.localUri) {
         let finalUri = assetToDownload.localUri;
 
-        // On web, we need to fetch the audio file and create a blob URL
-        // this fully downloads the file to the user's device memory and makes it available for the user to play
-        // fetch() is subject to CORS restrictions, so we need to document this for the users on web
-        // TODO(@hirbod): evaluate if we should implement a downloadAsync for web instead of using fetch here
+        // On web, fetch the audio file and create a blob URL for offline-style access
         if (Platform.OS === 'web') {
           const response = await fetch(assetToDownload.localUri);
           const blob = await response.blob();

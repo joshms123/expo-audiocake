@@ -38,7 +38,30 @@ This plan upgrades `@joshms123/expo-audiocake` (forked from an older expo-audio)
 
 ---
 
-## Phase 1: TypeScript Layer
+## Phase 1: TypeScript Layer ✅ COMPLETED
+
+**Completed:** 2026-02-26 on branch `claude/typescript-layer-upgrade-Ym9aq`
+
+**Summary:** All TypeScript types, event keys, module declarations, hooks, and utilities have been updated to match SDK 55 expo-audio while preserving all custom iOS advanced audio session features. Key changes:
+- `AudioStatus.id` and `RecordingStatus.id` changed from `number` → `string` (breaking)
+- New `AudioSourceInfo`, `PreloadOptions`, `AudioPlaylistLoopMode`, `AudioPlaylistOptions`, `AudioPlaylistStatus` types added
+- `name` field added to `AudioSource` object variant
+- `preferredForwardBufferDuration` added to `AudioPlayerOptions` and `AudioPlayer` constructor
+- `RecordingOptions.web` made required (minor breaking)
+- `allowsBackgroundRecording` added to `AudioMode`
+- `interruptionModeAndroid` deprecated (optional); unified `interruptionMode` now used cross-platform
+- `InterruptionModeAndroid` gains `'mixWithOthers'` value
+- New event keys: `PLAYLIST_STATUS_UPDATE`, `TRACK_CHANGED`
+- New native module methods: preload API (`preload`, `clearPreloadedSource`, `clearAllPreloadedSources`, `getPreloadedSources`), `requestNotificationPermissionsAsync`
+- `AudioPlaylist` class declaration + `AudioPlaylistEvents` type added
+- New hooks: `useAudioPlaylist`, `useAudioPlaylistStatus`; new factories: `createAudioPlaylist`
+- New preload exports: `preload`, `clearPreloadedSource`, `clearAllPreloadedSources`, `getPreloadedSources`
+- `utils/options.ts`: web platform branch added, explicit return type
+- `utils/resolveSource.ts`: asset `name` propagated, `resolveSources()` array helper added
+- `AudioModule.web.ts` updated for `string` id types
+- `ExpoAudio.web.ts` updated with stubs for all new Phase 1 APIs
+
+---
 
 ### 1.1 Types (`Audio.types.ts`)
 

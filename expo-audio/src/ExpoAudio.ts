@@ -5,10 +5,14 @@ import { Platform } from 'react-native';
 
 import {
   AudioMode,
+  AudioPlaylistOptions,
+  AudioPlaylistStatus,
   AudioPlayerOptions,
   AudioSessionState,
   AudioSource,
+  AudioSourceInfo,
   AudioStatus,
+  PreloadOptions,
   PitchCorrectionQuality,
   RecorderState,
   RecordingOptions,
@@ -18,10 +22,11 @@ import {
 import {
   AUDIO_SAMPLE_UPDATE,
   PLAYBACK_STATUS_UPDATE,
+  PLAYLIST_STATUS_UPDATE,
   RECORDING_STATUS_UPDATE,
 } from './AudioEventKeys';
 import AudioModule from './AudioModule';
-import { AudioPlayer, AudioRecorder, AudioSample } from './AudioModule.types';
+import { AudioPlaylist, AudioPlayer, AudioRecorder, AudioSample } from './AudioModule.types';
 import { createRecordingOptions } from './utils/options';
 import { resolveSource, resolveSourceWithDownload } from './utils/resolveSource';
 
@@ -100,7 +105,12 @@ export function useAudioPlayer(
   source: AudioSource = null,
   options: AudioPlayerOptions = {}
 ): AudioPlayer {
-  const { updateInterval = 500, downloadFirst = false, keepAudioSessionActive = false } = options;
+  const {
+    updateInterval = 500,
+    downloadFirst = false,
+    keepAudioSessionActive = false,
+    preferredForwardBufferDuration = 0,
+  } = options;
 
   // If downloadFirst is true, we don't need to resolve the source, because it will be resolved in the useEffect below.
   // If downloadFirst is false, we resolve the source here.
@@ -110,8 +120,14 @@ export function useAudioPlayer(
   }, [JSON.stringify(source), downloadFirst]);
 
   const player = useReleasingSharedObject(
-    () => new AudioModule.AudioPlayer(initialSource, updateInterval, keepAudioSessionActive),
-    [JSON.stringify(initialSource), updateInterval, keepAudioSessionActive]
+    () =>
+      new AudioModule.AudioPlayer(
+        initialSource,
+        updateInterval,
+        keepAudioSessionActive,
+        preferredForwardBufferDuration
+      ),
+    [JSON.stringify(initialSource), updateInterval, keepAudioSessionActive, preferredForwardBufferDuration]
   );
 
   // Handle async source resolution for downloadFirst
@@ -345,9 +361,19 @@ export function createAudioPlayer(
   source: AudioSource | string | number | null = null,
   options: AudioPlayerOptions = {}
 ): AudioPlayer {
-  const { updateInterval = 500, downloadFirst = false, keepAudioSessionActive = false } = options;
+  const {
+    updateInterval = 500,
+    downloadFirst = false,
+    keepAudioSessionActive = false,
+    preferredForwardBufferDuration = 0,
+  } = options;
   const initialSource = downloadFirst ? null : resolveSource(source);
-  const player = new AudioModule.AudioPlayer(initialSource, updateInterval, keepAudioSessionActive);
+  const player = new AudioModule.AudioPlayer(
+    initialSource,
+    updateInterval,
+    keepAudioSessionActive,
+    preferredForwardBufferDuration
+  );
 
   if (downloadFirst && source) {
     resolveSourceWithDownload(source)
@@ -430,7 +456,9 @@ export async function setAudioModeAsync(mode: Partial<AudioMode>): Promise<void>
       : {
           shouldPlayInBackground: mode.shouldPlayInBackground,
           shouldRouteThroughEarpiece: mode.shouldRouteThroughEarpiece,
-          interruptionMode: mode.interruptionModeAndroid,
+          allowsBackgroundRecording: mode.allowsBackgroundRecording,
+          // Use unified interruptionMode; fall back to deprecated interruptionModeAndroid
+          interruptionMode: mode.interruptionMode ?? mode.interruptionModeAndroid,
         };
   return await AudioModule.setAudioModeAsync(audioMode);
 }
@@ -523,6 +551,92 @@ export async function getRecordingPermissionsAsync(): Promise<PermissionResponse
  */
 export function getAudioSessionState(): AudioSessionState | null {
   return AudioModule.getAudioSessionState();
+}
+
+/**
+ * Creates an `AudioPlaylist` instance that automatically releases when the component unmounts.
+ *
+ * @param options Playlist configuration including sources and loop mode.
+ * @returns An `AudioPlaylist` instance managed by the component lifecycle.
+ */
+export function useAudioPlaylist(options: AudioPlaylistOptions): AudioPlaylist {
+  const playlist = useReleasingSharedObject(
+    () => new AudioModule.AudioPlaylist(options),
+    [JSON.stringify(options)]
+  );
+  return playlist;
+}
+
+/**
+ * Hook that provides real-time status updates for an `AudioPlaylist`.
+ *
+ * @param playlist The `AudioPlaylist` instance to monitor.
+ * @returns The current `AudioPlaylistStatus` object.
+ */
+export function useAudioPlaylistStatus(playlist: AudioPlaylist): AudioPlaylistStatus {
+  const currentStatus = useMemo(() => playlist.currentStatus, [playlist.id]);
+  return useEvent(playlist, PLAYLIST_STATUS_UPDATE, currentStatus);
+}
+
+/**
+ * Creates an `AudioPlaylist` instance that doesn't release automatically.
+ *
+ * > **info** For most use cases, use the [`useAudioPlaylist`](#useaudioplaylist) hook instead.
+ *
+ * @param options Playlist configuration including sources and loop mode.
+ * @returns An `AudioPlaylist` instance.
+ */
+export function createAudioPlaylist(options: AudioPlaylistOptions): AudioPlaylist {
+  return new AudioModule.AudioPlaylist(options);
+}
+
+/**
+ * Requests permission to post notifications (required for background recording on Android).
+ *
+ * @platform android
+ * @returns A Promise resolving to a `PermissionResponse`.
+ */
+export async function requestNotificationPermissionsAsync(): Promise<PermissionResponse> {
+  return await AudioModule.requestNotificationPermissionsAsync();
+}
+
+/**
+ * Pre-buffers an audio source so it can start playing with minimal delay.
+ *
+ * @param source The audio source to preload.
+ * @param options Optional preload configuration.
+ * @returns A Promise resolving to info about the preloaded source.
+ */
+export async function preload(
+  source: AudioSource,
+  options?: PreloadOptions
+): Promise<AudioSourceInfo> {
+  return await AudioModule.preload(resolveSource(source), options);
+}
+
+/**
+ * Releases a previously preloaded audio source from the in-memory cache.
+ *
+ * @param source The audio source to release.
+ */
+export async function clearPreloadedSource(source: AudioSource): Promise<void> {
+  return await AudioModule.clearPreloadedSource(resolveSource(source));
+}
+
+/**
+ * Releases all preloaded audio sources from the in-memory cache.
+ */
+export async function clearAllPreloadedSources(): Promise<void> {
+  return await AudioModule.clearAllPreloadedSources();
+}
+
+/**
+ * Returns the URIs of all currently preloaded audio sources.
+ *
+ * @returns An array of URI strings.
+ */
+export function getPreloadedSources(): string[] {
+  return AudioModule.getPreloadedSources();
 }
 
 export { AudioModule };

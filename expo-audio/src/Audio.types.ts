@@ -1,5 +1,15 @@
 import { AudioQuality, IOSOutputFormat } from './RecordingConstants';
 
+/**
+ * Minimal information about an audio source, used for preload tracking and display.
+ */
+export type AudioSourceInfo = {
+  /** URI of the audio resource. */
+  uri?: string;
+  /** Human-readable display name for the audio source. */
+  name?: string;
+};
+
 // @docsMissing
 export type AudioSource =
   | string
@@ -21,6 +31,11 @@ export type AudioSource =
        * On web requires the `Access-Control-Allow-Origin` header returned by the server to include the current domain.
        */
       headers?: Record<string, string>;
+      /**
+       * Optional human-readable display name for the audio source.
+       * Useful for lock screen metadata and playlist displays.
+       */
+      name?: string;
     };
 
 /**
@@ -104,6 +119,26 @@ export type AudioPlayerOptions = {
    * @default false
    */
   keepAudioSessionActive?: boolean;
+  /**
+   * The preferred number of seconds to pre-buffer from the network ahead of the playback head.
+   * A value of `0` uses the system default. This only affects network-sourced assets.
+   *
+   * @default 0
+   * @platform ios
+   * @platform android
+   */
+  preferredForwardBufferDuration?: number;
+};
+
+/**
+ * Options for pre-buffering an audio source before creating a player.
+ */
+export type PreloadOptions = {
+  /**
+   * The number of seconds to pre-buffer ahead of the playback head.
+   * @default 10
+   */
+  preferredForwardBufferDuration?: number;
 };
 
 /**
@@ -147,7 +182,7 @@ export type PitchCorrectionQuality = 'low' | 'medium' | 'high';
  */
 export type AudioStatus = {
   /** Unique identifier for the player instance. */
-  id: number;
+  id: string;
   /** Current playback position in seconds. */
   currentTime: number;
   /** String representation of the player's internal playback state. */
@@ -177,6 +212,13 @@ export type AudioStatus = {
    * @default true
    */
   shouldCorrectPitch: boolean;
+  /**
+   * Whether the media services have been reset (iOS only).
+   * Indicates the audio subsystem was restarted by the OS.
+   *
+   * @platform ios
+   */
+  mediaServicesDidReset?: boolean;
 };
 
 /**
@@ -188,7 +230,7 @@ export type AudioStatus = {
  */
 export type RecordingStatus = {
   /** Unique identifier for the recording session. */
-  id: number;
+  id: string;
   /** Whether the recording has finished (stopped). */
   isFinished: boolean;
   /** Whether an error occurred during recording. */
@@ -197,6 +239,13 @@ export type RecordingStatus = {
   error: string | null;
   /** File URL of the completed recording, if available. */
   url: string | null;
+  /**
+   * Whether the media services have been reset (iOS only).
+   * Indicates the audio subsystem was restarted by the OS.
+   *
+   * @platform ios
+   */
+  mediaServicesDidReset?: boolean;
 };
 
 /**
@@ -331,7 +380,7 @@ export type RecordingOptions = {
    * Recording options for the Web platform.
    * @platform web
    */
-  web?: RecordingOptionsWeb;
+  web: RecordingOptionsWeb;
 };
 
 /**
@@ -573,16 +622,19 @@ export type AudioMode = {
   playsInSilentMode: boolean;
   /**
    * Determines how the audio session interacts with other sessions.
+   * On Android, this is the unified interruption mode (replaces `interruptionModeAndroid`).
    *
    * @platform ios
+   * @platform android
    */
   interruptionMode: InterruptionMode;
   /**
    * Determines how the audio session interacts with other sessions on Android.
    *
+   * @deprecated Use `interruptionMode` instead, which is now cross-platform.
    * @platform android
    */
-  interruptionModeAndroid: InterruptionModeAndroid;
+  interruptionModeAndroid?: InterruptionModeAndroid;
   /**
    * Whether the audio session allows recording.
    *
@@ -596,10 +648,23 @@ export type AudioMode = {
    */
   shouldPlayInBackground: boolean;
   /**
-   * Whether the audio should route through the earpiece.
+   * Whether the audio should route through the earpiece instead of the speaker.
+   *
+   * @default false
+   * @platform ios
    * @platform android
    */
   shouldRouteThroughEarpiece: boolean;
+  /**
+   * Whether audio recording is allowed to continue in the background.
+   * On Android, this starts a foreground service to keep recording alive.
+   * On iOS, this sets the background audio recording capability.
+   *
+   * @default false
+   * @platform ios
+   * @platform android
+   */
+  allowsBackgroundRecording?: boolean;
 
   /**
    * iOS-specific advanced audio session configuration.
@@ -645,11 +710,10 @@ export type InterruptionMode = 'mixWithOthers' | 'doNotMix' | 'duckOthers';
  * Audio interruption behavior modes for Android.
  *
  * Controls how your app's audio interacts with other apps' audio on Android.
- * Note that Android doesn't support 'mixWithOthers' mode; audio focus is more strictly managed.
  *
  * @platform android
  */
-export type InterruptionModeAndroid = 'doNotMix' | 'duckOthers';
+export type InterruptionModeAndroid = 'mixWithOthers' | 'doNotMix' | 'duckOthers';
 
 /**
  * Polar pattern options for stereo/directional recording.
@@ -712,6 +776,63 @@ export type RecordingSource =
   | 'voice_communication'
   | 'voice_performance'
   | 'voice_recognition';
+
+/**
+ * Loop mode for audio playlists.
+ *
+ * - `'none'`: No looping — stop at end of playlist.
+ * - `'single'`: Repeat the current track indefinitely.
+ * - `'all'`: Loop through all tracks continuously.
+ */
+export type AudioPlaylistLoopMode = 'none' | 'single' | 'all';
+
+/**
+ * Options for creating an `AudioPlaylist`.
+ */
+export type AudioPlaylistOptions = {
+  /** Array of audio sources forming the playlist. */
+  sources: AudioSource[];
+  /**
+   * How often (in milliseconds) to emit playlist status updates.
+   * @default 500
+   */
+  updateInterval?: number;
+  /**
+   * Loop mode for the playlist.
+   * @default 'none'
+   */
+  loop?: AudioPlaylistLoopMode;
+  /**
+   * Cross-origin policy for web. See `AudioPlayerOptions.crossOrigin`.
+   * @platform web
+   */
+  crossOrigin?: 'anonymous' | 'use-credentials';
+};
+
+/**
+ * Comprehensive status information for an `AudioPlaylist`.
+ */
+export type AudioPlaylistStatus = {
+  /** Unique identifier for the playlist instance. */
+  id: string;
+  /** Index of the currently active track in the playlist. */
+  currentIndex: number;
+  /** Whether the playlist is currently playing. */
+  playing: boolean;
+  /** Current loop mode for the playlist. */
+  loop: AudioPlaylistLoopMode;
+  /** Whether the current track has finished loading. */
+  isLoaded: boolean;
+  /** Total duration of the current track in seconds. */
+  duration: number;
+  /** Current playback position within the current track, in seconds. */
+  currentTime: number;
+  /**
+   * Whether the media services have been reset (iOS only).
+   * @platform ios
+   */
+  mediaServicesDidReset?: boolean;
+};
 
 // @docsMissing
 export type AudioMetadata = {

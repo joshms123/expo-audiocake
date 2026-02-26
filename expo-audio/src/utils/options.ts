@@ -2,8 +2,8 @@ import { Platform } from 'expo-modules-core';
 
 import { RecordingOptions } from '../Audio.types';
 
-export function createRecordingOptions(options: RecordingOptions) {
-  let commonOptions = {
+export function createRecordingOptions(options: RecordingOptions): Partial<RecordingOptions> {
+  let commonOptions: Record<string, unknown> = {
     extension: options.extension,
     sampleRate: options.sampleRate,
     numberOfChannels: options.numberOfChannels,
@@ -21,6 +21,11 @@ export function createRecordingOptions(options: RecordingOptions) {
       ...commonOptions,
       ...options.android,
     };
+  } else if (Platform.OS === 'web') {
+    commonOptions = {
+      ...commonOptions,
+      ...options.web,
+    };
   }
-  return commonOptions;
+  return commonOptions as Partial<RecordingOptions>;
 }
