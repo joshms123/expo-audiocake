@@ -417,7 +417,21 @@ Create the full 375-line playlist implementation:
 
 ---
 
-## Phase 4: Web Layer
+## Phase 4: Web Layer ✅ COMPLETED
+
+**Completed:** 2026-02-27 on branch `claude/phase-4-web-layer-kdTW1`
+
+**Summary:** Web layer fully modernised to match SDK 55 expo-audio while preserving the custom `forceResetSession()` web stub. Key changes:
+- **Split** monolithic `AudioModule.web.ts` into five focused files: `AudioUtils.web.ts`, `MediaSessionController.web.ts`, `AudioPlayer.web.ts`, `AudioRecorder.web.ts`, `AudioPlaylist.web.ts`
+- **`AudioUtils.web.ts`**: shared utilities — `nextId()`, `getAudioContext()`, `safeDuration()` (NaN protection), `getStatusFromMedia()`, `getSourceUri()`, `preloadCache` (blob-URL map)
+- **`MediaSessionController.web.ts`**: singleton browser Media Session API controller — `setActivePlayer()`, `updateMetadata()`, `clear()`, `updatePlaybackState()`, `updatePositionState()`, seek-forward/backward action handlers
+- **`AudioPlayer.web.ts`**: full real Web Audio API sampling via `AnalyserNode`, preload cache lookup in `_createMediaElement`, `activePlayers` set, `isAudioActive` gate on `play()`, Media Session integration on play/pause/seek/end, `setActiveForLockScreen` / `updateLockScreenMetadata` / `clearLockScreenControls` wired to `mediaSessionController`, `release()` alias for `remove()`
+- **`AudioRecorder.web.ts`**: real device enumeration (`enumerateDevices`), metering via `AnalyserNode` (`getMeteringLevel()` in dBFS), device selection (`setInput()` + `selectedDeviceId`), `devicechange` listener, device-specific stream constraints; **PRESERVED** `forceResetSession()` as no-op web stub
+- **`AudioPlaylist.web.ts`**: full gapless playlist with `_nextMedia` preload buffer, loop modes (none/single/all), track navigation (`next/previous/skipTo`), queue management (`add/insert/remove/clear`), `_attachMediaHandlers` for timeupdate/play/pause/ended/loadedmetadata/waiting/canplaythrough/error events, `PLAYLIST_STATUS_UPDATE` + `TRACK_CHANGED` events
+- **`AudioModule.web.ts`**: refactored to re-export the three web classes, `isAudioActive` flag, `setIsAudioActiveAsync` pauses all `activePlayers`, full preload API (`preloadAsync`, `preload`, `clearPreloadedSource`, `clearAllPreloadedSources`, `getPreloadedSources`), permission helpers
+- **`ExpoAudio.web.ts`**: `useAudioPlayer` migrated to `useReleasingSharedObject`, `createAudioPlayer` uses `preloadAsync` for `downloadFirst`, `useAudioPlaylist` / `useAudioPlaylistStatus` / `createAudioPlaylist` fully implemented, all preload functions wired through to `AudioModule`, **PRESERVED** `requestNotificationPermissionsAsync` web stub (always granted)
+- **`Audio.types.ts`**: `AudioPlaylistStatus` expanded with `trackCount`, `isBuffering`, `playbackRate`, `muted`, `volume`, `didJustFinish`; `AudioPlaylistOptions.sources` made optional (`@default []`)
+- **`AudioModule.types.ts`**: `AudioPlaylist` class updated to match upstream interface (`add/insert/remove/clear/destroy/seekTo`, `trackCount`, `isBuffering`, `playbackRate`, `muted`, `volume`, `duration`, `currentTime`); `AudioPlaylistEvents.trackChanged` payload updated to `{ previousIndex, currentIndex }`
 
 ### 4.1 Split Monolithic `AudioModule.web.ts`
 

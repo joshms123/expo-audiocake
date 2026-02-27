@@ -436,8 +436,8 @@ export type RecordingEvents = {
 export type AudioPlaylistEvents = {
   /** Fired when the playlist's playback status changes. */
   playlistStatusUpdate(status: AudioPlaylistStatus): void;
-  /** Fired when the current track changes in the playlist. */
-  trackChanged(index: number): void;
+  /** Fired when the current track changes (next/previous/skip). */
+  trackChanged(data: { previousIndex: number; currentIndex: number }): void;
 };
 
 /**
@@ -448,10 +448,10 @@ export type AudioPlaylistEvents = {
  */
 export declare class AudioPlaylist extends SharedObject<AudioPlaylistEvents> {
   /**
-   * Initializes a new audio playlist with the given options.
+   * Initializes a new audio playlist instance.
    * @hidden
    */
-  constructor(options: AudioPlaylistOptions);
+  constructor(sources: AudioSource[], updateInterval: number, loop: AudioPlaylistLoopMode);
 
   /**
    * Unique identifier for the playlist object.
@@ -459,24 +459,64 @@ export declare class AudioPlaylist extends SharedObject<AudioPlaylistEvents> {
   id: string;
 
   /**
+   * Index of the currently playing track in the playlist.
+   */
+  readonly currentIndex: number;
+
+  /**
+   * Total number of tracks in the playlist.
+   */
+  readonly trackCount: number;
+
+  /**
+   * The audio sources currently in the playlist.
+   */
+  readonly sources: AudioSourceInfo[];
+
+  /**
    * Whether the playlist is currently playing.
    */
   playing: boolean;
 
   /**
+   * Whether the player is currently muted.
+   */
+  muted: boolean;
+
+  /**
+   * Whether the current track has finished loading.
+   */
+  isLoaded: boolean;
+
+  /**
+   * Whether the playlist is buffering.
+   */
+  isBuffering: boolean;
+
+  /**
+   * Current playback position in seconds.
+   */
+  currentTime: number;
+
+  /**
+   * Duration of the current track in seconds.
+   */
+  duration: number;
+
+  /**
+   * Current volume (0.0 to 1.0).
+   */
+  volume: number;
+
+  /**
+   * Current playback rate (1.0 = normal speed).
+   */
+  playbackRate: number;
+
+  /**
    * Current loop mode for the playlist.
    */
   loop: AudioPlaylistLoopMode;
-
-  /**
-   * Index of the currently active track.
-   */
-  currentIndex: number;
-
-  /**
-   * The list of audio sources in the playlist.
-   */
-  sources: AudioSource[];
 
   /**
    * The current playback status of the playlist.
@@ -490,10 +530,10 @@ export declare class AudioPlaylist extends SharedObject<AudioPlaylistEvents> {
   /** Pause playback. */
   pause(): void;
 
-  /** Skip to the next track. */
+  /** Skip to the next track in the playlist. */
   next(): void;
 
-  /** Go back to the previous track. */
+  /** Go back to the previous track in the playlist. */
   previous(): void;
 
   /**
@@ -503,27 +543,33 @@ export declare class AudioPlaylist extends SharedObject<AudioPlaylistEvents> {
   skipTo(index: number): void;
 
   /**
-   * Add a track to the end of the playlist, or insert it at `index`.
-   * @param source The audio source to add.
-   * @param index Optional zero-based insertion index.
+   * Seeks the playback to a specific position in seconds.
+   * @param seconds The position to seek to.
    */
-  addTrack(source: AudioSource, index?: number): void;
+  seekTo(seconds: number): Promise<void>;
+
+  /**
+   * Add a track to the end of the playlist.
+   * @param source The audio source to add.
+   */
+  add(source: AudioSource): void;
+
+  /**
+   * Insert a track at a specific index.
+   * @param source The audio source to insert.
+   * @param index Zero-based index to insert at.
+   */
+  insert(source: AudioSource, index: number): void;
 
   /**
    * Remove the track at `index` from the playlist.
    * @param index Zero-based index of the track to remove.
    */
-  removeTrack(index: number): void;
+  remove(index: number): void;
 
   /** Remove all tracks from the playlist. */
-  clearQueue(): void;
-
-  /**
-   * Change the loop mode.
-   * @param mode The new loop mode.
-   */
-  setLoop(mode: AudioPlaylistLoopMode): void;
+  clear(): void;
 
   /** Release this playlist and free associated resources. */
-  remove(): void;
+  destroy(): void;
 }

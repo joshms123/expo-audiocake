@@ -790,8 +790,11 @@ export type AudioPlaylistLoopMode = 'none' | 'single' | 'all';
  * Options for creating an `AudioPlaylist`.
  */
 export type AudioPlaylistOptions = {
-  /** Array of audio sources forming the playlist. */
-  sources: AudioSource[];
+  /**
+   * Initial audio sources forming the playlist.
+   * @default []
+   */
+  sources?: AudioSource[];
   /**
    * How often (in milliseconds) to emit playlist status updates.
    * @default 500
@@ -817,16 +820,28 @@ export type AudioPlaylistStatus = {
   id: string;
   /** Index of the currently active track in the playlist. */
   currentIndex: number;
-  /** Whether the playlist is currently playing. */
-  playing: boolean;
-  /** Current loop mode for the playlist. */
-  loop: AudioPlaylistLoopMode;
-  /** Whether the current track has finished loading. */
-  isLoaded: boolean;
-  /** Total duration of the current track in seconds. */
-  duration: number;
+  /** Total number of tracks in the playlist. */
+  trackCount: number;
   /** Current playback position within the current track, in seconds. */
   currentTime: number;
+  /** Total duration of the current track in seconds. */
+  duration: number;
+  /** Whether the playlist is currently playing. */
+  playing: boolean;
+  /** Whether the player is currently buffering. */
+  isBuffering: boolean;
+  /** Whether the current track has finished loading. */
+  isLoaded: boolean;
+  /** Current playback rate (1.0 = normal speed). */
+  playbackRate: number;
+  /** Whether the player is muted. */
+  muted: boolean;
+  /** Current volume level (0.0 to 1.0). */
+  volume: number;
+  /** Current loop mode for the playlist. */
+  loop: AudioPlaylistLoopMode;
+  /** Whether the current track just finished playing. */
+  didJustFinish: boolean;
   /**
    * Whether the media services have been reset (iOS only).
    * @platform ios
