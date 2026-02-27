@@ -4,14 +4,12 @@ import {
   AudioMetadata,
   AudioMode,
   AudioPlaylistLoopMode,
-  AudioPlaylistOptions,
   AudioPlaylistStatus,
   AudioSessionState,
   AudioSource,
   AudioSourceInfo,
   AudioStatus,
   PitchCorrectionQuality,
-  PreloadOptions,
   RecorderState,
   RecordingInput,
   RecordingOptions,
@@ -47,9 +45,9 @@ export declare class NativeAudioModule extends NativeModule {
   /**
    * Pre-buffers an audio source for near-instant playback.
    * @param source The audio source to preload.
-   * @param options Optional preload configuration.
+   * @param preferredForwardBufferDuration Buffer duration in seconds.
    */
-  preload(source: AudioSource, options?: PreloadOptions): Promise<AudioSourceInfo>;
+  preload(source: AudioSource, preferredForwardBufferDuration: number): Promise<void>;
 
   /**
    * Releases a previously preloaded audio source from the cache.

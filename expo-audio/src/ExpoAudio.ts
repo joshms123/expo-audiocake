@@ -10,7 +10,6 @@ import {
   AudioPlayerOptions,
   AudioSessionState,
   AudioSource,
-  AudioSourceInfo,
   AudioStatus,
   PreloadOptions,
   PitchCorrectionQuality,
@@ -28,7 +27,7 @@ import {
 import AudioModule from './AudioModule';
 import { AudioPlaylist, AudioPlayer, AudioRecorder, AudioSample } from './AudioModule.types';
 import { createRecordingOptions } from './utils/options';
-import { resolveSource, resolveSourceWithDownload } from './utils/resolveSource';
+import { resolveSource, resolveSources, resolveSourceWithDownload } from './utils/resolveSource';
 
 // TODO: Temporary solution until we develop a way of overriding prototypes that won't break the lazy loading of the module.
 const replace = AudioModule.AudioPlayer.prototype.replace;
@@ -559,11 +558,16 @@ export function getAudioSessionState(): AudioSessionState | null {
  * @param options Playlist configuration including sources and loop mode.
  * @returns An `AudioPlaylist` instance managed by the component lifecycle.
  */
-export function useAudioPlaylist(options: AudioPlaylistOptions): AudioPlaylist {
+export function useAudioPlaylist(options: AudioPlaylistOptions = {}): AudioPlaylist {
+  const { sources = [], updateInterval = 500, loop = 'none' } = options;
+
+  const resolvedSources = useMemo(() => resolveSources(sources), [JSON.stringify(sources)]);
+
   const playlist = useReleasingSharedObject(
-    () => new AudioModule.AudioPlaylist(options),
-    [JSON.stringify(options)]
+    () => new AudioModule.AudioPlaylist(resolvedSources, updateInterval, loop),
+    [JSON.stringify(resolvedSources), updateInterval, loop]
   );
+
   return playlist;
 }
 
@@ -586,8 +590,10 @@ export function useAudioPlaylistStatus(playlist: AudioPlaylist): AudioPlaylistSt
  * @param options Playlist configuration including sources and loop mode.
  * @returns An `AudioPlaylist` instance.
  */
-export function createAudioPlaylist(options: AudioPlaylistOptions): AudioPlaylist {
-  return new AudioModule.AudioPlaylist(options);
+export function createAudioPlaylist(options: AudioPlaylistOptions = {}): AudioPlaylist {
+  const { sources = [], updateInterval = 500, loop = 'none' } = options;
+  const resolvedSources = resolveSources(sources);
+  return new AudioModule.AudioPlaylist(resolvedSources, updateInterval, loop);
 }
 
 /**
@@ -605,13 +611,15 @@ export async function requestNotificationPermissionsAsync(): Promise<PermissionR
  *
  * @param source The audio source to preload.
  * @param options Optional preload configuration.
- * @returns A Promise resolving to info about the preloaded source.
  */
 export async function preload(
   source: AudioSource,
-  options?: PreloadOptions
-): Promise<AudioSourceInfo> {
-  return await AudioModule.preload(resolveSource(source), options);
+  options: PreloadOptions = {}
+): Promise<void> {
+  const resolved = resolveSource(source);
+  if (!resolved) return;
+  const { preferredForwardBufferDuration = 10 } = options;
+  return AudioModule.preload(resolved, preferredForwardBufferDuration);
 }
 
 /**
@@ -620,7 +628,9 @@ export async function preload(
  * @param source The audio source to release.
  */
 export async function clearPreloadedSource(source: AudioSource): Promise<void> {
-  return await AudioModule.clearPreloadedSource(resolveSource(source));
+  const resolved = resolveSource(source);
+  if (!resolved) return;
+  return await AudioModule.clearPreloadedSource(resolved);
 }
 
 /**
