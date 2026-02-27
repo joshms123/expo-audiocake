@@ -148,7 +148,23 @@ No changes needed — files are identical.
 
 ---
 
-## Phase 2: iOS Native Layer
+## Phase 2: iOS Native Layer ✅ COMPLETED
+
+**Completed:** 2026-02-27 on branch `claude/ios-native-layer-upgrade-0i6F0`
+
+**Summary:** All iOS Swift native layer files updated to match SDK 55 expo-audio while preserving all custom iOS advanced audio session features. Key changes:
+- `AudioPlaylist.swift` created: full `AVQueuePlayer`-backed playlist with loop modes (none/single/all), track navigation, queue management, and status events
+- `AudioPlayer.swift`: added `source` property for reset recovery, NaN protection on `duration`/`currentTime`, `replaceWithPreloadedItem()`, `onReady` callback in `replaceCurrentSource`, full media services reset recovery (`handleMediaServicesReset`, `replacePlayer`, `teardownPlayer`, `restorePlaybackState`), `teardownPlayer()` used in `sharedObjectWillRelease`
+- `AudioRecorder.swift`: added `mediaServicesDidReset` property, `currentOptions`/`currentSessionOptions` for re-creation, updated `init` to accept options, NaN protection, `handleMediaServicesReset()`, dynamic `mediaServicesDidReset` in status; **PRESERVED** `forceResetSession()` and smart session reuse (`.playAndRecord` check)
+- `AudioComponentRegistry.swift`: added `playlists` dict, `preloadedPlayers` dict, full playlist CRUD and preload cache methods, `AVFoundation` import
+- `AudioModule.swift`: added `lastConfiguredMode`, `allowsBackgroundRecording`, preload functions (`preload`, `clearPreloadedSource`, `clearAllPreloadedSources`, `getPreloadedSources`), `AudioPlaylist` class block with all properties/functions, updated `AudioPlayer` constructor (preload cache + `preferredForwardBufferDuration`), `replace` checks preload cache, updated `AudioRecorder` constructor to pass options, playlist interruption handling, background recorder pause/resume, `reconfigureAudioSession()` with `lastConfiguredMode`, `mediaServicesWereResetNotification` wrapped in `#if os(iOS)`; **PRESERVED** `getAudioSessionState()`, `applyAdvancedSessionConfig()`, `configurePreferredInput()`, `configureStereoDataSource()`, all `mapPolarPattern/Orientation/Mode` helpers, `handleAudioSessionRouteChange` auto-reapply, `forceResetSession` in recorder class block
+- **MERGED** `setAudioMode`: added `shouldRouteThroughEarpiece` (overrides `defaultToSpeaker` when true), `allowsBackgroundRecording`, `lastConfiguredMode` tracking; kept custom `ios?` config parsing, `desiredMode` for advanced session mode, `desiredDefaultToSpeaker`/`desiredAllowBluetoothA2DP` from ios config
+- `AudioRecords.swift`: added `shouldRouteThroughEarpiece` and `allowsBackgroundRecording` to `AudioMode`, added `LoopMode` enum; **PRESERVED** `AudioModeIOSConfig` struct and `ios` field
+- `AudioSource.swift`: added `name` field
+- `AudioUtils.swift`: refactored `createAVPlayer` to delegate to `createAVPlayerItem`, added `automaticallyLoadedAssetKeys: [.tracks, .duration]`
+- `AudioRecordingRequester.swift`: updated `EXFatal`→`RCTFatal`, `EXErrorWithMessage`→`RCTErrorWithMessage`
+---
+
 
 ### 2.1 New File: `AudioPlaylist.swift`
 
