@@ -462,7 +462,16 @@ Extract into separate files:
 
 ---
 
-## Phase 5: Plugin & Config
+## Phase 5: Plugin & Config ✅ COMPLETED
+
+**Completed:** 2026-02-27 on branch `claude/phase-5-plugin-config-1Iyya`
+
+**Summary:** Config plugin and package metadata updated to match SDK 55 expo-audio. Key changes:
+- `plugin/src/withAudio.ts`: expanded from minimal permissions-only plugin to full SDK 55 implementation — adds `withInfoPlist` (iOS `UIBackgroundModes: ['audio']` when background enabled), `withAndroidManifest` (service declaration management via `toggleService` helper), `recordAudioAndroid`, `enableBackgroundPlayback` (default `true`), `enableBackgroundRecording` (default `false`) config options; adds `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `FOREGROUND_SERVICE_MICROPHONE` Android permissions as needed; registers `expo.modules.audio.service.AudioControlsService` (mediaPlayback foreground type + MediaSessionService intent-filter) and `expo.modules.audio.service.AudioRecordingService` (microphone foreground type) in the Android manifest via the config plugin rather than hardcoded
+- `package.json`: version bumped `1.0.10` → `2.0.0` (major SDK upgrade), `expo-module-scripts` updated `^5.0.7` → `^55.0.2`
+- `expo-module.config.json`: already matched upstream — no changes needed
+
+---
 
 ### 5.1 `plugin/src/withAudio.ts`
 

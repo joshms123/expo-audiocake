@@ -1,7 +1,7 @@
 {
   "name": "@joshms123/expo-audiocake",
   "title": "Expo Audiocake",
-  "version": "1.0.10",
+  "version": "2.0.0",
   "description": "Expo Audio fork with advanced iOS AVAudioSession control for stereo recording with polar patterns, input orientation, and auto-reapply on route changes.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -45,7 +45,7 @@
     "expo": "*",
     "expo-asset": "*",
     "expo-modules-core": "*",
-    "expo-module-scripts": "^5.0.7",
+    "expo-module-scripts": "^55.0.2",
     "react": "*",
     "react-native": "*"
   },
