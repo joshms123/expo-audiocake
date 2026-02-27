@@ -279,7 +279,27 @@ Create the full 375-line playlist implementation:
 
 ---
 
-## Phase 3: Android Native Layer
+## Phase 3: Android Native Layer ✅ COMPLETED
+
+**Completed:** 2026-02-27 on branch `claude/android-native-layer-upgrade-Ce9GS`
+
+**Summary:** All Android Kotlin native layer files updated to match SDK 55 expo-audio while preserving all custom Android-specific features. Key changes:
+- `AudioPlaylist.kt` created: full `ExoPlayer`-backed playlist with loop modes (NONE/SINGLE/ALL), track navigation, queue management, status events (`playlistStatusUpdate`, `trackChanged`), and `DataSource.Factory` injection
+- `AudioPreloadManager.kt` created: in-memory audio caching singleton with `InMemoryDataSourceFactory` for instant preloaded playback
+- `Playable.kt` created: shared interface for `AudioPlayer` and `AudioPlaylist` with default implementations for `play()`, `pause()`, `seekTo()`, `setVolume()`, and computed `currentTime`/`duration`/`isPlaying`/`volume`
+- `service/BaseServiceConnection.kt` created: abstract base with `ServiceBindingState` enum, thread-safe state management, `startServiceAndBind()` companion helper, and unified bind/unbind lifecycle
+- `service/AudioRecordingService.kt` created: foreground service for background recording with `FOREGROUND_SERVICE_TYPE_MICROPHONE`, recorder registry, notification management, and `AudioRecordingServiceBinder`
+- `service/AudioPlaybackServiceConnection.kt` created: bound service connection for lock screen controls with `AudioPlaybackServiceBinder`, state-aware binding, and `onServiceConnected` delegation to `AudioControlsService`
+- `service/AudioRecordingServiceConnection.kt` created: suspend-based bound service connection for recording with timeout detection, coroutine continuation, and `cleanup()` lifecycle
+- `AudioControlsService.kt`: refactored from static singleton to bound service with `AudioPlaybackServiceBinder`, `weakContext` for lifecycle safety, cancellable `artworkLoadJob`, `registerPlayer`, `setPlayerMetadata`, `setPlayerOptions`, `unregisterPlayer` methods, `appContext` setter, and session built on main queue
+- `AudioPlayer.kt`: implements `Playable`, adds `bufferDurationMs` constructor param with `DefaultLoadControl`, adds `mediaSession` (player owns its own basic session), adds `serviceConnection` (`AudioPlaybackServiceConnection`), adds `intendedPlayingState`/`previousPlaybackState` for transient filtering, rearchitects lock screen controls to use bound service, adds `setPlaybackRate()` with pitch clamping, adds `assignBasicMediaSession()` for fallback, migrates `playerScope` to `Dispatchers.Main`
+- `AudioRecorder.kt`: adds `useForegroundService` flag, `serviceConnection` (`AudioRecordingServiceConnection`), `suspend prepareRecording()` with foreground service binding, notification permission check (`hasNotificationPermissions()`), updated `record()` to register with service, updated `stopRecording()` with better error handling, `getCurrentTimeSeconds()` method, updated `sharedObjectDidRelease()` for service cleanup; **PRESERVED** `forceResetSession()` custom method
+- `AudioModule.kt`: adds `playlists` ConcurrentHashMap, `allPlayables` property (players + playlists), `allowsBackgroundRecording` flag, preload functions (`preload`, `clearPreloadedSource`, `clearAllPreloadedSources`, `getPreloadedSources`), `requestNotificationPermissionsAsync`, `AudioPlaylist` class block with all properties/functions, updated `AudioPlayer` constructor with `preferredForwardBufferDuration`, `MIX_WITH_OTHERS` early return in `requestAudioFocus`, updated background transitions (separate playable vs recorder), updated `OnDestroy` with preload cleanup, `createMediaItem` checks preload cache; **PRESERVED** `forceResetSession` on recorder, **PRESERVED** recording-specific audio focus config (exclusive gain + speech content type via `isRecordingMode`)
+- `AudioRecords.kt`: adds `name` to `AudioSource`, `LoopMode` enum (NONE/SINGLE/ALL), renames `allowsRecording`→`allowsBackgroundRecording` on `AudioMode`, adds `MIX_WITH_OTHERS` to `InterruptionMode`
+- `AudioExceptions.kt`: adds `NotificationPermissionsException`, `getPlaybackServiceErrorMessage()`, `getRecordingServiceErrorMessage()` helpers, `AudioRecordingServiceException`, `AudioPlaybackServiceException`; **PRESERVED** `AudioRecorderException` for `forceResetSession()`
+- `AudioUtils.kt`: adds `buildBasicMediaSession()` helper and required `Context`/`ExoPlayer`/`MediaSession` imports
+- `build.gradle`: adds `androidx.core:core-ktx:1.15.0` and `media3-datasource` dependencies
+- `AndroidManifest.xml`: removed service declarations (delegated to config plugin in Phase 5), kept only `RECORD_AUDIO` and `MODIFY_AUDIO_SETTINGS` permissions
 
 ### 3.1 New Files
 

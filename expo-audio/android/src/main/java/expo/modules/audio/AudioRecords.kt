@@ -9,14 +9,21 @@ import java.net.URL
 
 class AudioSource(
   @Field val uri: String?,
-  @Field val headers: Map<String, String>?
+  @Field val headers: Map<String, String>?,
+  @Field val name: String? = null
 ) : Record
+
+enum class LoopMode(val value: String) : Enumerable {
+  NONE("none"),
+  SINGLE("single"),
+  ALL("all")
+}
 
 class AudioMode(
   @Field val shouldPlayInBackground: Boolean = false,
   @Field val shouldRouteThroughEarpiece: Boolean?,
   @Field val interruptionMode: InterruptionMode?,
-  @Field val allowsRecording: Boolean = false
+  @Field val allowsBackgroundRecording: Boolean = false
 ) : Record
 
 // Data class because we want `equals`
@@ -99,7 +106,8 @@ class AudioLockScreenOptions(
 
 enum class InterruptionMode(val value: String) : Enumerable {
   DO_NOT_MIX("doNotMix"),
-  DUCK_OTHERS("duckOthers")
+  DUCK_OTHERS("duckOthers"),
+  MIX_WITH_OTHERS("mixWithOthers")
 }
 
 class RecordOptions(
