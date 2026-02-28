@@ -812,10 +812,18 @@ public class AudioModule: Module {
         self.desiredMode = .default
       }
     } else {
-      // Reset to defaults when ios config is not provided
+      // Reset all iOS-specific state when ios config is not provided,
+      // preventing stale values from being reapplied on route changes
       self.desiredMode = .default
       self.desiredDefaultToSpeaker = false
       self.desiredAllowBluetoothA2DP = false
+      self.desiredPolarPattern = nil
+      self.desiredPreferredInput = nil
+      self.desiredDataSourceName = nil
+      self.desiredInputOrientation = nil
+      self.desiredSampleRate = nil
+      self.desiredIOBufferDuration = nil
+      self.autoReapplyOnRouteChange = true
     }
 
     if !mode.allowsRecording {

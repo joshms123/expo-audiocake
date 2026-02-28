@@ -598,7 +598,7 @@ export type AudioModeIOSConfig = {
    *
    * When false, audio routes to earpiece by default (phone call style).
    *
-   * @default false
+   * @default true
    * @platform ios
    */
   defaultToSpeaker?: boolean;
