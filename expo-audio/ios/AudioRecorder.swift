@@ -113,10 +113,12 @@ class AudioRecorder: SharedRef<AVAudioRecorder>, RecordingResultHandler {
         throw AudioRecordingException("Failed to configure audio session: \(error.localizedDescription)")
       }
     } else {
-      // Session is already .playAndRecord - just ensure it's active
+      // Session is already .playAndRecord — re-apply options if provided, then ensure active
       do {
+        if !sessionOptions.isEmpty {
+          try session.setCategory(.playAndRecord, mode: .default, options: sessionOptions)
+        }
         try session.setActive(true)
-        print("AudioRecorder: Session already configured for recording, just ensuring active")
       } catch {
         currentState = .error
         throw AudioRecordingException("Failed to activate audio session: \(error.localizedDescription)")

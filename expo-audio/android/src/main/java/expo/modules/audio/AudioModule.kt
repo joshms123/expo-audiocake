@@ -199,7 +199,7 @@ class AudioModule : Module() {
       allowsBackgroundRecording = mode.allowsBackgroundRecording
 
       // Preserved: track recording mode for audio focus configuration
-      isRecordingMode = mode.allowsBackgroundRecording
+      isRecordingMode = mode.allowsRecording
 
       recorders.values.forEach { recorder ->
         recorder.useForegroundService = allowsBackgroundRecording

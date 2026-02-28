@@ -603,6 +603,11 @@ export function createAudioPlaylist(options: AudioPlaylistOptions = {}): AudioPl
  * @returns A Promise resolving to a `PermissionResponse`.
  */
 export async function requestNotificationPermissionsAsync(): Promise<PermissionResponse> {
+  if (Platform.OS !== 'android') {
+    throw new Error(
+      'expo-audio: `requestNotificationPermissionsAsync` is only available on Android.'
+    );
+  }
   return await AudioModule.requestNotificationPermissionsAsync();
 }
 
@@ -645,7 +650,7 @@ export async function clearAllPreloadedSources(): Promise<void> {
  *
  * @returns An array of URI strings.
  */
-export function getPreloadedSources(): string[] {
+export async function getPreloadedSources(): Promise<string[]> {
   return AudioModule.getPreloadedSources();
 }
 

@@ -23,6 +23,7 @@ class AudioMode(
   @Field val shouldPlayInBackground: Boolean = false,
   @Field val shouldRouteThroughEarpiece: Boolean?,
   @Field val interruptionMode: InterruptionMode?,
+  @Field val allowsRecording: Boolean = false,
   @Field val allowsBackgroundRecording: Boolean = false
 ) : Record
 

@@ -63,7 +63,7 @@ export declare class NativeAudioModule extends NativeModule {
   /**
    * Returns the URIs of all currently preloaded audio sources.
    */
-  getPreloadedSources(): string[];
+  getPreloadedSources(): Promise<string[]>;
 
   readonly AudioPlayer: typeof AudioPlayer;
   readonly AudioRecorder: typeof AudioRecorder;

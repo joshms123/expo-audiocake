@@ -707,13 +707,9 @@ export type AudioMode = {
 export type InterruptionMode = 'mixWithOthers' | 'doNotMix' | 'duckOthers';
 
 /**
- * Audio interruption behavior modes for Android.
- *
- * Controls how your app's audio interacts with other apps' audio on Android.
- *
- * @platform android
+ * @deprecated Use `InterruptionMode` instead, which now works on both platforms.
  */
-export type InterruptionModeAndroid = 'mixWithOthers' | 'doNotMix' | 'duckOthers';
+export type InterruptionModeAndroid = InterruptionMode;
 
 /**
  * Polar pattern options for stereo/directional recording.

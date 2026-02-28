@@ -848,9 +848,12 @@ public class AudioModule: Module {
 
 #if !os(tvOS)
       if category == .playAndRecord {
-        // shouldRouteThroughEarpiece takes priority; otherwise use custom ios.defaultToSpeaker
-        if !mode.shouldRouteThroughEarpiece && desiredDefaultToSpeaker {
-          categoryOptions.insert(.defaultToSpeaker)
+        // shouldRouteThroughEarpiece takes priority
+        // Default to speaker (upstream behavior) unless ios.defaultToSpeaker is explicitly false
+        if !mode.shouldRouteThroughEarpiece {
+          if mode.ios == nil || desiredDefaultToSpeaker {
+            categoryOptions.insert(.defaultToSpeaker)
+          }
         }
 
         // Apply A2DP preference for high-quality Bluetooth stereo

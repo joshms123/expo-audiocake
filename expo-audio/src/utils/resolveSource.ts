@@ -95,8 +95,10 @@ export function resolveSource(source?: AudioSource | string | number | null): Au
  */
 export function resolveSources(
   sources: (AudioSource | string | number | null)[]
-): (AudioSource | null)[] {
-  return sources.map(resolveSource);
+): NonNullable<AudioSource>[] {
+  return sources
+    .map(resolveSource)
+    .filter((source): source is NonNullable<AudioSource> => source != null);
 }
 
 /**
