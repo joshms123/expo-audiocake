@@ -803,13 +803,19 @@ public class AudioModule: Module {
     #if os(iOS)
     // Parse iOS configuration BEFORE using it to build category options
     if let iosConfig = mode.ios {
-      self.desiredDefaultToSpeaker = iosConfig.defaultToSpeaker ?? false
+      // Default to speaker = true to match upstream behavior unless explicitly set to false
+      self.desiredDefaultToSpeaker = iosConfig.defaultToSpeaker ?? true
       self.desiredAllowBluetoothA2DP = iosConfig.allowBluetoothA2DP ?? false
       if let modeStr = iosConfig.mode {
         self.desiredMode = try mapMode(modeStr)
       } else {
         self.desiredMode = .default
       }
+    } else {
+      // Reset to defaults when ios config is not provided
+      self.desiredMode = .default
+      self.desiredDefaultToSpeaker = false
+      self.desiredAllowBluetoothA2DP = false
     }
 
     if !mode.allowsRecording {
