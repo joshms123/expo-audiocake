@@ -163,6 +163,12 @@ public class AudioPlayer: SharedRef<AVPlayer> {
             installTap()
             shouldInstallAudioTap = false
           }
+        } else if status == .failed {
+          let errorMessage = self.ref.currentItem?.error?.localizedDescription ?? "Failed to load audio"
+          self.updateStatus(with: [
+            "error": errorMessage,
+            "playing": false
+          ])
         }
       }
       .store(in: &cancellables)

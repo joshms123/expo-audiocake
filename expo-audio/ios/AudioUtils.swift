@@ -108,7 +108,7 @@ struct AudioUtils {
     }
 
     let asset = AVURLAsset(url: finalUrl, options: options)
-    return AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: [.tracks, .duration])
+    return AVPlayerItem(asset: asset)
   }
 
   static func createRecordingOptions(_ options: RecordingOptions) -> [String: Any] {
