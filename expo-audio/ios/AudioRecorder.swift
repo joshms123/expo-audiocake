@@ -113,11 +113,11 @@ class AudioRecorder: SharedRef<AVAudioRecorder>, RecordingResultHandler {
         throw AudioRecordingException("Failed to configure audio session: \(error.localizedDescription)")
       }
     } else {
-      // Session is already .playAndRecord — re-apply options if provided, then ensure active
+      // Session is already .playAndRecord — just ensure it's active.
+      // Do NOT re-apply setCategory here: it would overwrite desiredMode and
+      // reset advanced session config (polar patterns, preferred input, etc.)
+      // that was applied by setAudioModeAsync / applyAdvancedSessionConfig().
       do {
-        if !sessionOptions.isEmpty {
-          try session.setCategory(.playAndRecord, mode: .default, options: sessionOptions)
-        }
         try session.setActive(true)
       } catch {
         currentState = .error
