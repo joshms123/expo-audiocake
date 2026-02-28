@@ -225,37 +225,14 @@ isRecordingMode = mode.allowsRecording
 
 **File**: `ios/AudioRecorder.swift`
 
-The fork added "smart session reuse" that skips calling `setCategory` when the session is already `.playAndRecord`:
+**Status**: ~~Significant~~ **NOT A BUG — fork behavior is correct**
 
-```swift
-// FORK
-let needsSessionConfig = session.category != .playAndRecord
-if needsSessionConfig {
-    try session.setCategory(.playAndRecord, mode: .default, options: sessionOptions)
-    // ...
-} else {
-    try session.setActive(true)  // Only activates — doesn't apply sessionOptions
-}
-```
+The fork's "smart session reuse" intentionally skips `setCategory` when the session is already `.playAndRecord`. This is correct because:
+- If the session is already `.playAndRecord`, it was configured by `setAudioModeAsync` with the correct `desiredMode` and advanced config (polar patterns, preferred input, etc.)
+- Re-calling `setCategory` with `mode: .default` would overwrite `desiredMode` (e.g. `.measurement`) and reset all advanced session configuration
+- The `sessionOptions` were already applied during `setAudioModeAsync`, so they don't need re-applying
 
-This means if `setAudioModeAsync` configured specific session options (like `.mixWithOthers`), and then the user calls `prepareToRecordAsync`, those options won't be re-applied. The upstream always applies the full configuration, which ensures consistent state.
-
-The intent is good (preserve custom config set via `setAudioModeAsync`), but the implementation should at minimum re-apply the `sessionOptions` parameter:
-
-**Fix**: Always pass session options even when the category is already correct:
-
-```swift
-if needsSessionConfig {
-    try session.setCategory(.playAndRecord, mode: .default, options: sessionOptions)
-    try session.setActive(true)
-} else {
-    // Session is already .playAndRecord — re-apply options and ensure active
-    if !sessionOptions.isEmpty {
-        try session.setCategory(.playAndRecord, mode: .default, options: sessionOptions)
-    }
-    try session.setActive(true)
-}
-```
+**No fix needed.**
 
 ---
 
